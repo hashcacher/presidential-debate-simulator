@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Presidential Debate Simulator</title>
+<style>
+
+text {  
+  font: 16px sans-serif;
+}
+
+.background {
+  fill: none;
+  pointer-events: all;
+}
+
+.container {
+  margin: auto;
+  width: 1100px;
+}
+
+
+</style>
+<body>
+
+<div class="container">
+  <div class="svg-container">
+  </div>
+
+<!--   <div class="controls-wrapper">
+    control
+  </div> -->
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+<script>
+
+var width = window.innerWidth*.9,
+    height = window.innerHeight*.9,
+    format = d3.format(",d"),
+    color = d3.scale.category20c(),
+    speed = 3000,
+    dur = 20000;
+
+var zoom = d3.behavior.zoom()
+    .translate([0,0])
+    .on("zoom", zoomed);
+
+// zoomed();
+// g.attr("transform", "translate(" + diameter/2 + "," + diameter/2 + ")scale(" + "8" + ")");
+
+var svg = d3.select(".svg-container").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+
+var g = svg.append("g");
+
+// svg
+//   .call(zoom) // delete this line to disable free zooming
+//   .call(zoom.event);
+
+var data;
+
+var sentenceHeight = 30;
+
+var sentences = {{sentences|safe}}.map(function(line) {
+  var parts = line.split(":");
+  return {
+    speaker: parts[0], 
+    sentence: parts[1]
+  };
+});
+
+var node = g.selectAll(".sentence")
+    .data(sentences)
+    .enter().append("g")
+    .attr("class", "sentence")
+    .attr("transform","translate(0,"+sentences.length*sentenceHeight*1.1+")")
+    .style("opacity", 0);
+
+console.log(height*1.1);
+
+data = node;
+
+node.append("title")
+    .text(function(d) { 
+      return d.speaker; 
+});
+
+node.append("text")
+      .text(function(d) { return d.sentence; });
+// node.selectAll("text")
+//       .call(wrap, width*.4);
+
+//scroll the screen down
+g.transition().ease("linear")
+  .delay(dur + speed*(height/sentenceHeight/2))
+  .duration(speed*data[0].length)
+  .attr("transform", "translate(0," + -1*(sentenceHeight+data[0].length*sentenceHeight)+")");
+
+
+//Gradually reveal the conversation 
+//make the first one go faster
+var i = 0;
+loop = setInterval(function() {
+  //get next sentence
+  d3.select(data[0][i])
+    //reveal
+    .transition()
+      .duration(100)
+      .style("opacity", 1)
+    //move sentence up
+    .transition()
+      .duration(dur)
+      .attr("transform","translate(0,"+(sentenceHeight+i*sentenceHeight)+")") //calculate how far down to translate
+
+  //termination condition
+  i+=1;
+  if(i==data[0].length)
+    clearInterval(loop);
+
+}, speed);
+
+
+//Zooming ----------------------------------
+function zoomed() {
+  g.attr("transform", "translate(" + d3.event.translate + ")");
+}
+
+// If the drag behavior prevents the default click,
+// also stop propagation so we don’t click-to-zoom.
+function stopped() {
+  if (d3.event.defaultPrevented) d3.event.stopPropagation();
+}
+//--------------------------------------------
+d3.select(self.frameElement).style("height", window.innerHeight*.9 + "px");
+
+
+//wraps text
+function wrap(text, width) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 1.1, // ems
+        y = text.attr("y"),
+        dy = 0,
+        tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em");
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width) {
+        line.pop();
+        tspan.text(line.join(" "));
+        line = [word];
+        tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      }
+    }
+  });
+}
+
+</script>

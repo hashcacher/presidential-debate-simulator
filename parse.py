@@ -4,7 +4,10 @@
 import re
 
 def write_line(speaker, line, append):
-	cleaned_line = line.replace(r"’", "'")
+	# cleaned_line = line.replace(r"’", "'")
+	# cleaned_line = line.replace(r"…", ",")
+	cleaned_line = re.sub('[^\x00-\x7f]', '', line)
+
 	if append or line[0] == "\xe2":
 		speaker.write(' ' + cleaned_line)
 	else:
